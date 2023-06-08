@@ -7,7 +7,6 @@ const mongoose = require('mongoose');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 
-
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
@@ -20,28 +19,6 @@ const connect = mongoose.connect(url);
 connect.then((db) => {
   console.log("Connect correctly to Server")
 }, (err) => { console.log(err) });
-
-function auth(req, res, next) {
-  console.log(req.session);
-  if (!req.session.user) {
-    var err = new Error('You are not authenticated!');
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 401;
-    next(err);
-    return;
-  } else {
-    if (req.session.user === 'authenticated') {
-      console.log('req.session: ', req.session);
-      next();
-    }
-    else {
-      var err = new Error('You are not authenticated!');
-      err.status = 403;
-      next(err);
-    }
-  }
-}
-
 
 var app = express();
 
@@ -62,13 +39,34 @@ app.use(session({
   resave: false,
   store: new FileStore()
 }));
-app.use(auth)
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
+
+function auth(req, res, next) {
+  console.log(req.session);
+
+  if (!req.session.user) {
+    var err = new Error('You are not authenticated!');
+    err.status = 403;
+    return next(err);
+  }
+  else {
+    if (req.session.user === 'authenticated') {
+      next();
+    }
+    else {
+      var err = new Error('You are not authenticated!');
+      err.status = 403;
+      return next(err);
+    }
+  }
+}
+
+app.use(auth)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
