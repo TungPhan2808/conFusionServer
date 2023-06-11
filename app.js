@@ -8,6 +8,7 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -15,7 +16,7 @@ var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 
-const url = "mongodb://localhost:27017/conFusion"
+const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 connect.then((db) => {
@@ -36,7 +37,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser('12345-67890'));
 app.use(session({
   name: 'session-id',
-  secret: '12345-67890-09876-54321',
+  secret: config.secretKey,
   saveUninitialized: false,
   resave: false,
   store: new FileStore()
