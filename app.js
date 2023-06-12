@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
-var authenticate = require('./authenticate');
+var authenticate = require('./authenticate')
 var config = require('./config');
 
 var indexRouter = require('./routes/index');
@@ -43,11 +43,12 @@ app.use(session({
   store: new FileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/dishes', dishRouter);
-app.use('/promotions', promoRouter);
-app.use('/leaders', leaderRouter);
+
 
 function auth(req, res, next) {
   console.log(req.user);
@@ -62,11 +63,12 @@ function auth(req, res, next) {
   }
 }
 
+
 app.use(auth)
-app.use(passport.initialize());
-app.use(passport.session());
 
-
+app.use('/dishes', dishRouter);
+app.use('/promotions', promoRouter);
+app.use('/leaders', leaderRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
