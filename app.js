@@ -1,27 +1,32 @@
-var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-const mongoose = require('mongoose');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 var session = require('express-session');
 var FileStore = require('session-file-store')(session);
-var passport = require('passport');
-var authenticate = require('./authenticate')
-var config = require('./config');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
+var index = require('./routes/index');
+var users = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
+var config = require('./config');
 
+const mongoose = require('mongoose');
+
+const Dishes = require('./models/dishes');
+
+var passport = require('passport');
+var authenticate = require('./authenticate');
+
+// Connection URL
 const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 connect.then((db) => {
-  console.log("Connect correctly to Server")
-}, (err) => { console.log(err) });
+  console.log("Connected correctly to server");
+}, (err) => { console.log(err); });
 
 var app = express();
 
@@ -29,15 +34,16 @@ var app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+// uncomment after placing your favicon in /public
+//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+//app.use(cookieParser('12345-67890-09876-54321'));
 
-app.use(cookieParser('12345-67890'));
 app.use(session({
   name: 'session-id',
-  secret: config.secretKey,
+  secret: '12345-67890-09876-54321',
   saveUninitialized: false,
   resave: false,
   store: new FileStore()
@@ -46,25 +52,26 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/', index);
+app.use('/users', users);
 
+// function auth (req, res, next) {
+//   console.log(req.user);
 
-function auth(req, res, next) {
-  console.log(req.user);
+//   if (!req.user) {
+//     var err = new Error('You are not authenticated!');
+//     res.setHeader('WWW-Authenticate', 'Basic');                          
+//     err.status = 401;
+//     next(err);
+//   }
+//   else {
+//         next();
+//   }
+// }
 
-  if (!req.user) {
-    var err = new Error('You are not authenticated!');
-    err.status = 403;
-    next(err);
-  }
-  else {
-    next();
-  }
-}
+// app.use(auth);
 
-
-app.use(auth)
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
@@ -72,7 +79,9 @@ app.use('/leaders', leaderRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
-  next(createError(404));
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
 // error handler
